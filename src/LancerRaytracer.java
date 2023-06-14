@@ -1,9 +1,9 @@
 import java.time.Instant;
 import java.time.Duration;
 
-import raytracer.Disp;
+import service.raytracing.Disp;
 import raytracer.Scene;
-import raytracer.Image;
+import service.raytracing.Image;
 
 public class LancerRaytracer {
 

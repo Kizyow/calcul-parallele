@@ -1,4 +1,5 @@
-package raytracer;
+package raytracing;
+
 import java.awt.Color;
 import java.io.*;
 import java.util.Date;

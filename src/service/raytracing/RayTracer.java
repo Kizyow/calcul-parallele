@@ -1,8 +1,6 @@
-package raytracer;
+package raytracing;
 
-import java.awt.image.BufferedImage;
-import java.awt.Color;
-import java.io.*;
+import java.io.Serializable;
 
 
 public class RayTracer implements Serializable {
@@ -17,8 +15,8 @@ public class RayTracer implements Serializable {
     }
     
     // calcul d'un imagette (x0,y0) (x0+w, y0+h) 
-    public Image compute(Scene sc, int x0, int y0, 
-		  int w, int h, int nr, int d){
+    public Image compute(Scene sc, int x0, int y0,
+						 int w, int h, int nr, int d){
 	
 	Intensite in;
 	Point dir;

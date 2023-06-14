@@ -1,10 +1,11 @@
-package raytracer;
+package raytracing;
+
 import java.util.Iterator;
 
-public class Intersection extends Point{
+public class Intersection extends Point {
 
 	// attributs
-	private Primitive objet; // référence à l'objet intersecté 
+	private Primitive objet; // référence à l'objet intersecté
 	private float t; // "distance" paramétrique depuis l'origine du rayon
     
 	/** crée une intersection vide
@@ -79,7 +80,7 @@ public class Intersection extends Point{
 	 * @return l'éclairage calculé
 	 */ 
 	public Intensite eclairer(Scene s, Point obs, int niveau,
-														int px, int py){
+							  int px, int py){
 		Point inter = new Point(x, y, z);
 		Intensite i = new Intensite(0.0f, 0.0f, 0.0f);
 
