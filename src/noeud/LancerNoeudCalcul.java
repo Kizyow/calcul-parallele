@@ -21,7 +21,7 @@ public class LancerNoeudCalcul {
                 ServiceServeurCentral serveurCentral = (ServiceServeurCentral) reg.lookup("Raytracing");
 
 
-                NoeudCalcul noeudCalcul = new NoeudCalcul(serveurCentral);
+                NoeudCalcul noeudCalcul = new NoeudCalcul();
 
                 int Un_port = 0;
                 ServiceNoeudCalcul service = (ServiceNoeudCalcul) UnicastRemoteObject.exportObject(noeudCalcul, Un_port);

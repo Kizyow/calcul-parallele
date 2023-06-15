@@ -6,7 +6,10 @@ public interface ServiceServeurCentral extends Remote {
 
     void enregistrerNoeud(ServiceNoeudCalcul noeud) throws RemoteException;
 
-    ArrayList<ServiceNoeudCalcul> demandeCalcul(int nombre, boolean bypass) throws RemoteException;
+    ServiceNoeudCalcul demandeCalcul() throws RemoteException;
 
-    void libereNoeud(ServiceNoeudCalcul noeud) throws RemoteException;
+    void supprimerNoeud(ServiceNoeudCalcul noeud) throws RemoteException;
+
+    boolean isAlive() throws RemoteException;
+
 }

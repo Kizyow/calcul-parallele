@@ -4,67 +4,39 @@ import java.util.ArrayList;
 
 public class ServeurCentral implements ServiceServeurCentral{
 
-    private ArrayList<ServiceNoeudCalcul> noeudsLibres;
-
-    private ArrayList<ServiceNoeudCalcul> noeudsOccupes;
+    private ArrayList<ServiceNoeudCalcul> noeuds;
+    private int noeudCourant;
 
     public ServeurCentral() {
-        this.noeudsLibres = new ArrayList<ServiceNoeudCalcul>();
-        this.noeudsOccupes = new ArrayList<ServiceNoeudCalcul>();
+        this.noeuds = new ArrayList<ServiceNoeudCalcul>();
     }
 
     public void enregistrerNoeud(ServiceNoeudCalcul noeud) {
-        this.noeudsLibres.add(noeud);
+        this.noeuds.add(noeud);
         System.out.println("Noeud enregistré");
-        System.out.println("Noeuds disponibles : " + this.noeudsLibres.size());
-        System.out.println("Noeuds occupés : " + this.noeudsOccupes.size());
     }
 
-    public ArrayList<ServiceNoeudCalcul> demandeCalcul(int nombre, boolean bypass) {
-
-        for (int i = 0; i < this.noeudsLibres.size(); i++) {
-            try {
-                ServiceNoeudCalcul noeud = this.noeudsLibres.get(i);
-                noeud.isAlive();
-            } catch (ConnectException e) {
-                noeudsLibres.remove(i);
-            } catch (RemoteException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        ArrayList<ServiceNoeudCalcul> noeuds = new ArrayList<ServiceNoeudCalcul>();
-
-        if (nombre > this.noeudsLibres.size()) {
-            if (bypass) {
-                nombre = this.noeudsLibres.size();
-            } else {
-                throw new RuntimeException("Pas assez de noeuds disponibles");
-            }
-        }
-
-        for (int i = nombre-1; i >= 0; i--) {
-            ServiceNoeudCalcul noeud = this.noeudsLibres.get(i);
-            this.noeudsLibres.remove(noeud);
-            this.noeudsOccupes.add(noeud);
-            noeuds.add(noeud);
-        }
-
-        System.out.println("Noeuds disponibles : " + this.noeudsLibres.size());
-        System.out.println("Noeuds occupés : " + this.noeudsOccupes.size());
-
-        return noeuds;
-    }
-
-    public void libereNoeud(ServiceNoeudCalcul noeud) {
-        if (this.noeudsOccupes.contains(noeud)) {
-            this.noeudsOccupes.remove(noeud);
-            this.noeudsLibres.add(noeud);
-
-            System.out.println("Noeuds disponibles : " + this.noeudsLibres.size());
-            System.out.println("Noeuds occupés : " + this.noeudsOccupes.size());
-        } else {
-            throw new RuntimeException("Noeud non occupé");
+    public synchronized void supprimerNoeud(ServiceNoeudCalcul noeud) {
+        if (this.noeuds.remove(noeud)) {
+            System.out.println("Noeud supprimé");
         }
     }
+
+    public synchronized ServiceNoeudCalcul demandeCalcul() {
+        if (this.noeudCourant >= this.noeuds.size()) {
+            this.noeudCourant = 0;
+        }
+        if (this.noeuds.size() == 0) {
+            return null;
+        }
+
+        ServiceNoeudCalcul noeud = this.noeuds.get(this.noeudCourant);
+        this.noeudCourant++;
+        return noeud;
+    }
+
+    public boolean isAlive() throws RemoteException {
+        return true;
+    }
+
 }

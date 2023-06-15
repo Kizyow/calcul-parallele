@@ -5,6 +5,7 @@ import raytracing.Image;
 import java.io.IOException;
 import java.net.SocketException;
 import java.rmi.ConnectException;
+import java.rmi.ConnectIOException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -17,8 +18,8 @@ public class Client {
 
                 try {
 
-                        if (args.length != 8 && args.length != 9) {
-                                System.out.println("Usage: java Client <ip du serveur> <port de l'annuaire> <fichier> <largeur de l'image> <hauteur de l'image> <nombre de noeuds> <nombre de lignes> <nombre de colonnes> {<bypass>}");
+                        if (args.length != 6) {
+                                System.out.println("Usage: java Client <ip du serveur> <port de l'annuaire> <fichier> <largeur de l'image> <hauteur de l'image> <taille du decoupage>");
                                 System.exit(1);
                         } else {
                                 String ipServeur = args[0];
@@ -26,35 +27,16 @@ public class Client {
                                 String fichier = args[2];
                                 int largeur = Integer.parseInt(args[3]);
                                 int hauteur = Integer.parseInt(args[4]);
-                                int nbNoeuds = Integer.parseInt(args[5]);
-                                int nbLignes = Integer.parseInt(args[6]);
+                                int taille = Integer.parseInt(args[5]);
 
-                                if (hauteur % nbLignes != 0) {
-                                        System.out.println("Le nombre de lignes doit etre un diviseur de la hauteur de l'image");
-                                        System.exit(1);
+                                if (taille > 512) {
+                                        taille = 512;
+                                        System.out.println("La taille du decoupage est trop grande, elle a été fixée à 512");
                                 }
-
-                                int nbColonnes = Integer.parseInt(args[7]);
-
-                                if (largeur % nbColonnes != 0) {
-                                        System.out.println("Le nombre de colonnes doit etre un diviseur de la largeur de l'image");
-                                        System.exit(1);
-                                }
-
-                                boolean bypass = false;
-                                if (args.length == 9) {
-                                        bypass = Boolean.parseBoolean(args[8]);
-                                }
-
 
                                 Registry reg = LocateRegistry.getRegistry(ipServeur, portAnnuaire);
 
                                 ServiceServeurCentral serveurCentral = (ServiceServeurCentral) reg.lookup("Raytracing");
-
-                                ArrayList<ServiceNoeudCalcul> noeudCalculs = serveurCentral.demandeCalcul(nbNoeuds, bypass);
-
-                                int largeurCase = largeur / nbColonnes;
-                                int hauteurCase = hauteur / nbLignes;
 
                                 Disp disp = new Disp("Raytracer", largeur, hauteur);
 
@@ -63,32 +45,61 @@ public class Client {
 
                                 int ligne = 0;
                                 int colonne = 0;
+                                final int tailleDecoupage = taille;
 
-                                while (ligne < nbLignes) {
-
-                                        ServiceNoeudCalcul noeudCalcul = noeudCalculs.get((ligne*nbColonnes + colonne) % noeudCalculs.size());
+                                while (ligne < tailleDecoupage) {
 
                                         final int tempColonne = colonne;
                                         final int tempLigne = ligne;
 
                                         new Thread(() -> {
-                                                try {
-                                                        Image image = noeudCalcul.calculerImage(scene, tempColonne * largeurCase, tempLigne * hauteurCase, largeurCase, hauteurCase);
-                                                        disp.setImage(image, tempColonne * largeurCase, tempLigne * hauteurCase);
-                                                } catch (Exception e) {
-                                                        noeudCalculs.remove(noeudCalcul);
+                                                boolean fin = false;
+                                                ServiceNoeudCalcul noeudCalcul = null;
+                                                while (!fin) {
+                                                        try {
+                                                                noeudCalcul = serveurCentral.demandeCalcul();
+
+                                                                if (noeudCalcul == null) {
+                                                                        try {
+                                                                                Thread.sleep(1000);
+                                                                        } catch (InterruptedException e) {
+                                                                                System.out.println("Erreur lors de l'attente d'un noeud de calcul");
+                                                                        }
+                                                                } else {
+                                                                        Image image = noeudCalcul.calculerImage(scene, tempColonne * largeur / tailleDecoupage, tempLigne * hauteur / tailleDecoupage, (int) Math.ceil((double) largeur / (double) tailleDecoupage), (int) Math.ceil((double) hauteur / (double) tailleDecoupage));
+                                                                        disp.setImage(image, tempColonne * largeur / tailleDecoupage, tempLigne * hauteur / tailleDecoupage);
+                                                                        fin = true;
+                                                                }
+
+                                                        } catch (ConnectException e) {
+                                                                try {
+                                                                        serveurCentral.supprimerNoeud(noeudCalcul);
+                                                                } catch (RemoteException e1) {
+                                                                        try {
+                                                                                serveurCentral.isAlive();
+                                                                                System.out.println("Erreur lors de la suppression d'un noeud de calcul");
+                                                                        } catch (RemoteException e2) {
+                                                                                System.out.println("Serveur central non disponible. Le client va s'arreter");
+                                                                                System.exit(1);
+                                                                        }
+                                                                }
+                                                        } catch (RemoteException e) {
+                                                                try {
+                                                                        serveurCentral.isAlive();
+                                                                        System.out.println("Erreur lors de la recuperation d'un noeud de calcul");
+                                                                } catch (RemoteException e2) {
+                                                                        System.out.println("Serveur central non disponible. Le client va s'arreter");
+                                                                        System.exit(1);
+                                                                }
+                                                        }
                                                 }
                                         }).start();
 
                                         colonne++;
-                                        if (colonne == nbColonnes) {
+                                        if (colonne == tailleDecoupage) {
                                                 colonne = 0;
                                                 ligne++;
                                         }
-                                }
-
-                                for (ServiceNoeudCalcul noeudCalcul : noeudCalculs) {
-                                        serveurCentral.libereNoeud(noeudCalcul);
                                 }
 
                         }
