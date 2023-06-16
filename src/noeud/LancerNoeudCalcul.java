@@ -17,7 +17,7 @@ public class LancerNoeudCalcul {
                 int portAnnuaire = Integer.parseInt(args[1]);
 
 
-                Registry reg = LocateRegistry.getRegistry(portAnnuaire);
+                Registry reg = LocateRegistry.getRegistry(ipServeur, portAnnuaire);
                 ServiceServeurCentral serveurCentral = (ServiceServeurCentral) reg.lookup("Raytracing");
 
 
@@ -27,6 +27,9 @@ public class LancerNoeudCalcul {
                 ServiceNoeudCalcul service = (ServiceNoeudCalcul) UnicastRemoteObject.exportObject(noeudCalcul, Un_port);
 
                 serveurCentral.enregistrerNoeud(noeudCalcul);
+
+                System.out.println("Connexion etablie au serveur central");
+
             }
 
         } catch (RemoteException e) {
